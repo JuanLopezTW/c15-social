@@ -115,7 +115,8 @@ class ChatServiceTest {
     @Test
     void unMensajeInvalidoNoSeGuardaNiSeAvisa() {
         assertThrows(IllegalArgumentException.class, () -> chat.enviarSala("s1", "ana", "   "));
-        assertThrows(IllegalArgumentException.class, () -> chat.enviarSala("s1", "ana", "x".repeat(MensajeChat.MAX_LONGITUD + 1)));
+        String muyLargo = "x".repeat(MensajeChat.MAX_LONGITUD + 1);
+        assertThrows(IllegalArgumentException.class, () -> chat.enviarSala("s1", "ana", muyLargo));
 
         assertTrue(chat.historialSala("s1", "ana").isEmpty());
         verifyNoInteractions(notifier);

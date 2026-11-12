@@ -113,8 +113,10 @@ class RegistroPeticionesFilterTest {
         MockHttpServletRequest peticion = new MockHttpServletRequest("GET", "/api/salas");
         IllegalStateException fallo = new IllegalStateException("se rompio");
 
+        MockHttpServletResponse respuesta = new MockHttpServletResponse();
+
         assertSame(fallo, assertThrows(IllegalStateException.class, () -> filtro.doFilter(peticion,
-                new MockHttpServletResponse(), (req, res) -> {
+                respuesta, (req, res) -> {
                     throw fallo;
                 })));
 

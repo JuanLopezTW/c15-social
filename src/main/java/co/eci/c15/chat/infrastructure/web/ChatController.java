@@ -31,49 +31,49 @@ public class ChatController {
     }
 
     @GetMapping("/global")
-    public ResponseEntity<?> historialGlobal() {
+    public ResponseEntity<Object> historialGlobal() {
         return responder(HttpStatus.OK, chat::historialGlobal);
     }
 
     @PostMapping("/global")
-    public ResponseEntity<?> enviarGlobal(@RequestBody Map<String, String> body, Principal yo) {
+    public ResponseEntity<Object> enviarGlobal(@RequestBody Map<String, String> body, Principal yo) {
         return responder(HttpStatus.CREATED, () -> chat.enviarGlobal(yo.getName(), body.get(TEXTO)));
     }
 
     @GetMapping("/salas/{salaId}")
-    public ResponseEntity<?> historialSala(@PathVariable("salaId") String salaId, Principal yo) {
+    public ResponseEntity<Object> historialSala(@PathVariable("salaId") String salaId, Principal yo) {
         return responder(HttpStatus.OK, () -> chat.historialSala(salaId, yo.getName()));
     }
 
     @PostMapping("/salas/{salaId}")
-    public ResponseEntity<?> enviarSala(@PathVariable("salaId") String salaId, @RequestBody Map<String, String> body,
+    public ResponseEntity<Object> enviarSala(@PathVariable("salaId") String salaId, @RequestBody Map<String, String> body,
                                            Principal yo) {
         return responder(HttpStatus.CREATED, () -> chat.enviarSala(salaId, yo.getName(), body.get(TEXTO)));
     }
 
     @GetMapping("/partidas/{matchId}")
-    public ResponseEntity<?> historialPartida(@PathVariable("matchId") String matchId, Principal yo) {
+    public ResponseEntity<Object> historialPartida(@PathVariable("matchId") String matchId, Principal yo) {
         return responder(HttpStatus.OK, () -> chat.historialPartida(matchId, yo.getName()));
     }
 
     @PostMapping("/partidas/{matchId}")
-    public ResponseEntity<?> enviarPartida(@PathVariable("matchId") String matchId, @RequestBody Map<String, String> body,
+    public ResponseEntity<Object> enviarPartida(@PathVariable("matchId") String matchId, @RequestBody Map<String, String> body,
                                            Principal yo) {
         return responder(HttpStatus.CREATED, () -> chat.enviarPartida(matchId, yo.getName(), body.get(TEXTO)));
     }
 
     @GetMapping("/partidas/{matchId}/equipo")
-    public ResponseEntity<?> historialEquipo(@PathVariable("matchId") String matchId, Principal yo) {
+    public ResponseEntity<Object> historialEquipo(@PathVariable("matchId") String matchId, Principal yo) {
         return responder(HttpStatus.OK, () -> chat.historialEquipo(matchId, yo.getName()));
     }
 
     @PostMapping("/partidas/{matchId}/equipo")
-    public ResponseEntity<?> enviarEquipo(@PathVariable("matchId") String matchId, @RequestBody Map<String, String> body,
+    public ResponseEntity<Object> enviarEquipo(@PathVariable("matchId") String matchId, @RequestBody Map<String, String> body,
                                            Principal yo) {
         return responder(HttpStatus.CREATED, () -> chat.enviarEquipo(matchId, yo.getName(), body.get(TEXTO)));
     }
 
-    private static ResponseEntity<?> responder(HttpStatus ok, Supplier<Object> accion) {
+    private static ResponseEntity<Object> responder(HttpStatus ok, Supplier<Object> accion) {
         try {
             return ResponseEntity.status(ok).body(accion.get());
         } catch (ChatNoDisponibleException e) {
@@ -87,7 +87,7 @@ public class ChatController {
         }
     }
 
-    private static ResponseEntity<?> error(HttpStatus status, String mensaje) {
+    private static ResponseEntity<Object> error(HttpStatus status, String mensaje) {
         return ResponseEntity.status(status).body(Map.of("error", mensaje));
     }
 }

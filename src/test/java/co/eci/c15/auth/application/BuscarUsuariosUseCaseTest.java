@@ -53,7 +53,8 @@ class BuscarUsuariosUseCaseTest {
     @Test
     void sinIdsLanzaExcepcion() {
         assertThrows(IllegalArgumentException.class, () -> useCase.ejecutar(null));
-        assertThrows(IllegalArgumentException.class, () -> useCase.ejecutar(List.of(" ")));
+        List<String> soloEspacios = List.of(" ");
+        assertThrows(IllegalArgumentException.class, () -> useCase.ejecutar(soloEspacios));
         verifyNoInteractions(repo);
     }
 

@@ -19,7 +19,7 @@ public class UsuarioController {
 
     /** GET /api/usuarios?ids=a,b,c -> [{userId, username}]. */
     @GetMapping
-    public ResponseEntity<?> buscar(@RequestParam(value = "ids", required = false) List<String> ids) {
+    public ResponseEntity<Object> buscar(@RequestParam(value = "ids", required = false) List<String> ids) {
         try {
             return ResponseEntity.ok(buscarUsuarios.ejecutar(ids));
         } catch (IllegalArgumentException e) {

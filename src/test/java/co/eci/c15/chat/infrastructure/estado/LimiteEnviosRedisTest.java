@@ -31,7 +31,8 @@ class LimiteEnviosRedisTest extends RedisDePrueba {
     void dejaElMaximoYFrenaElSiguienteHastaQuePaseLaVentana() {
         for (int i = 0; i < LimiteEnvios.MAX_MENSAJES; i++) limite.registrar("ana", AHORA.plusMillis(i));
 
-        assertThrows(DemasiadosMensajesException.class, () -> limite.registrar("ana", AHORA.plusMillis(10)));
+        Instant diezMsDespues = AHORA.plusMillis(10);
+        assertThrows(DemasiadosMensajesException.class, () -> limite.registrar("ana", diezMsDespues));
         assertDoesNotThrow(() -> limite.registrar("beto", AHORA));
         assertDoesNotThrow(() -> limite.registrar("ana", AHORA.plus(LimiteEnvios.VENTANA).plusMillis(1)));
     }

@@ -28,8 +28,9 @@ class PartidaIniciadaEventTest {
     void unaDuracionFueraDeRangoEsInvalida() {
         assertThrows(IllegalArgumentException.class, () -> new PartidaIniciadaEvent("m1", EQUIPOS, null));
         assertThrows(IllegalArgumentException.class, () -> new PartidaIniciadaEvent("m1", EQUIPOS, Duration.ZERO));
-        assertThrows(IllegalArgumentException.class, () -> new PartidaIniciadaEvent("m1", EQUIPOS, Duration.ofMinutes(-1)));
-        assertThrows(IllegalArgumentException.class,
-                () -> new PartidaIniciadaEvent("m1", EQUIPOS, PartidaIniciadaEvent.DURACION_MAXIMA.plusSeconds(1)));
+        Duration negativa = Duration.ofMinutes(-1);
+        Duration demasiadoLarga = PartidaIniciadaEvent.DURACION_MAXIMA.plusSeconds(1);
+        assertThrows(IllegalArgumentException.class, () -> new PartidaIniciadaEvent("m1", EQUIPOS, negativa));
+        assertThrows(IllegalArgumentException.class, () -> new PartidaIniciadaEvent("m1", EQUIPOS, demasiadoLarga));
     }
 }

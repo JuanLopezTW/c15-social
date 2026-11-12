@@ -28,15 +28,15 @@ public class PerfilController {
     }
 
     @GetMapping
-    public ResponseEntity<?> consultar(Principal yo) {
+    public ResponseEntity<Object> consultar(Principal yo) {
         return perfil.consultar(yo.getName())
-                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .<ResponseEntity<Object>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of(ERROR, "Esta cuenta aun no tiene nombre de jugador")));
     }
 
     @PostMapping
-    public ResponseEntity<?> registrar(@RequestBody Map<String, String> body, Principal yo) {
+    public ResponseEntity<Object> registrar(@RequestBody Map<String, String> body, Principal yo) {
         try {
             return ResponseEntity.ok(perfil.registrar(yo.getName(), body.get("username")));
         } catch (UsernameInvalidoException e) {
