@@ -1,0 +1,91 @@
+spring:
+  application:
+    name: c15-social
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Proveedor de identidad (Auth0): no son secretos
+          issuer-uri: ${AUTH0_ISSUER:https://escaperoomc15.us.auth0.com/}
+          audiences: ${AUTH0_AUDIENCE:https://api.escaperoomc15}
+  # Base de datos propia del servicio: usuarios (perfil) y partidas_jugadas (estadisticas)
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:c15_social}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PUERTO:6379}
+      password: ${REDIS_CLAVE:}
+      repositories:
+        enabled: false
+  # Eventos entre servicios (Event Hubs en Azure: bootstrap <namespace>.servicebus.windows.net:9093 + SASL)
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVIDORES:localhost:9092}
+    consumer:
+      # Un grupo nuevo empieza por lo que llegue (no repite partidas viejas); el grupo luego recuerda por donde va
+      auto-offset-reset: ${KAFKA_DESDE:latest}
+    listener:
+      # La traza (traceId) llega en los headers del mensaje
+      observation-enabled: true
+    admin:
+      # Crea los topics si no existen (en Event Hubs se crean a mano)
+      auto-create: ${KAFKA_CREAR_TOPICS:true}
+
+server:
+  port: ${PORT:8080}
+
+c15:
+  estado:
+    # false: chat en memoria (una sola replica). true: en Redis, compartido entre replicas
+    redis: ${ESTADO_REDIS:false}
+    # Todo en Redis caduca: lo de una partida dura lo que la partida mas este margen (regla del profe: minutos, nunca mas de 1 h)
+    margen: 10m
+  eventos:
+    # Los eventos entre servicios (partida iniciada/terminada, sala cerrada) llegan por Kafka
+    kafka: ${EVENTOS_KAFKA:true}
+    prefijo: ${KAFKA_PREFIJO:c15.}
+    # Las replicas de este servicio comparten grupo: cada evento lo atiende una sola
+    grupo: ${KAFKA_GRUPO:c15-social}
+  servicios:
+    # El chat de la sala de espera le pregunta a salas si la sala sigue en espera y quien esta
+    salas: ${SALAS_URL:http://localhost:8082}
+  stomp:
+    broker:
+      # Lo que se publica (chat, ranking) sale por RabbitMQ hacia el broker, donde estan conectados los jugadores
+      relay: ${STOMP_RELAY:true}
+      host: ${STOMP_HOST:localhost}
+      puerto: ${STOMP_PUERTO:61613}
+      usuario: ${STOMP_USUARIO:}
+      clave: ${STOMP_CLAVE:}
+
+# Logs en JSON salvo con el perfil "local"; el traceId lo agrega Micrometer Tracing
+logging:
+  structured:
+    format:
+      console: ecs
+  level:
+    # El cliente de Kafka escribe mucho en INFO (configuracion, rebalanceos); solo avisos y errores
+    org.apache.kafka: warn
+
+management:
+  health:
+    redis:
+      enabled: ${ESTADO_REDIS:false}
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_TRACES_URL:http://localhost:4318/v1/traces}
+      export:
+        enabled: ${OTEL_ACTIVO:false}
+    logging:
+      endpoint: ${OTEL_LOGS_URL:http://localhost:4318/v1/logs}
+      export:
+        enabled: ${OTEL_ACTIVO:false}
