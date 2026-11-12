@@ -84,7 +84,7 @@ class EventosKafkaFlujoTest {
 
     /**
      * Arranca Kafka reintentando: Testcontainers copia un script dentro del contenedor y a veces lo ejecuta
-     * antes de que el sistema termine de soltarlo ("Text file busy", sale con 126). Pasa sobre todo en el CI.
+     * antes de que el sistema termine de soltarlo ("Text file busy", sale con 126). Pasa mas que nada en el CI.
      */
     private static synchronized void arrancarKafka() {
         for (int intento = 1; !KAFKA.isRunning(); intento++) {
