@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcBuilderCustomizer;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.test.web.servlet.setup.ConfigurableMockMvcBuilder;
 
@@ -27,8 +28,12 @@ class TokenDePruebaMockMvc implements MockMvcBuilderCustomizer {
 
     @Override
     public void customize(ConfigurableMockMvcBuilder<?> builder) {
-        builder.defaultRequest(get("/").with(peticion ->
-                jwt().jwt(token -> token.subject(jugadorDe(peticion))).postProcessRequest(peticion)));
+        builder.defaultRequest(get("/").with(peticion -> {
+            var token = jwt().jwt(t -> t.subject(jugadorDe(peticion)));
+            // Las funciones de administracion piden el rol admin (SeguridadFlujoTest prueba la regla real)
+            if (peticion.getRequestURI().startsWith("/api/admin/")) token = token.authorities(new SimpleGrantedAuthority("ROLE_admin"));
+            return token.postProcessRequest(peticion);
+        }));
     }
 
     private String jugadorDe(MockHttpServletRequest peticion) {

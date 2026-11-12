@@ -30,3 +30,15 @@ mvn spring-boot:run         # necesita Postgres, Kafka, RabbitMQ (y Redis si EST
 ```
 
 Para levantar todo el sistema junto, usa el compose de `c15-gateway`.
+
+## Admin (solo rol `admin`)
+
+Todo sale de los logs centralizados (Log Analytics), así que los números están consolidados entre réplicas. Un jugador recibe **403**; fuera de Azure la respuesta es **503** con el motivo.
+
+| Método y ruta | Qué devuelve |
+|---|---|
+| `GET /api/admin/tablero/negocio?minutos=60` | `totales` (jugadoresActivos, sesionesIniciadas, jugadoresNuevos, salasCreadas, partidasIniciadas, partidasTerminadas, acertijosResueltos, objetosRecolectados, retosJugados, interacciones), `masUsadas` [{funcion, usos}] y `jugadoresEnElTiempo` [{momento, jugadores}] |
+| `GET /api/admin/tablero/tecnico?minutos=15` | `replicas` [{servicio, replica, peticiones, p50, p95, porcentajeErrores, excepciones, ultimaSenal, degradada, sinSenal}] y `usuariosConcurrentes` (últimos 5 min) |
+| `GET /api/admin/errores/{codigo}?dias=1` | Lo que dejó la petición con ese código (el que el front muestra al jugador): [{hora, servicio, replica, nivel, mensaje, traceId, ruta, estado, excepcion, detalle, pila}] |
+
+`minutos` va de 5 a 1440; `dias` de 1 a 7. `degradada` = p95 > 300 ms o errores > 2 %; `sinSenal` = sin logs en 2 min (escenario O2). En el front, `useEsAdmin()` dice si mostrar estas pantallas.

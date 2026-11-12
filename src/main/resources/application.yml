@@ -41,6 +41,10 @@ server:
   port: ${PORT:8080}
 
 c15:
+  admin:
+    log-analytics:
+      # Workspace de Log Analytics (Azure) con los logs de todos los servicios; vacio: el admin recibe 503
+      workspace: ${LOG_ANALYTICS_WORKSPACE:}
   estado:
     # false: chat en memoria (una sola replica). true: en Redis, compartido entre replicas
     redis: ${ESTADO_REDIS:false}
