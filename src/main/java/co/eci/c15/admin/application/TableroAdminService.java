@@ -37,9 +37,12 @@ public class TableroAdminService {
             | where TimeGenerated > ago(%dm)
             | extend j = parse_json(Log_s)
             """;
-    /** Peticiones de los jugadores: /api/version la llaman las comprobaciones de salud, no la gente. */
-    private static final String PETICIONES = LOGS
+    /** Peticiones de los jugadores en todos los puntos: /api/version la llaman las comprobaciones de salud. */
+    private static final String PETICIONES_TODAS = LOGS
             + "| where tostring(j.evento) == 'http.peticion' and tostring(j.http.ruta) != '/api/version'\n";
+    /** Solo en los servicios: cada peticion cuenta una vez (el gateway tambien la registra al pasarla). */
+    private static final String SIN_GATEWAY = "| where ContainerAppName_s != 'c15-gateway'\n";
+    private static final String PETICIONES = PETICIONES_TODAS + SIN_GATEWAY;
     private static final String REPLICA = "replica";
     private static final String SERVICIO = "servicio";
     private static final String PETICIONES_CAMPO = "peticiones";
@@ -59,7 +62,7 @@ public class TableroAdminService {
 
     public TableroNegocioDto negocio(int minutos) {
         int m = acotar(minutos);
-        Map<String, Object> totales = primera(logs.consultar(LOGS.formatted(m) + """
+        Map<String, Object> totales = primera(logs.consultar(LOGS.formatted(m) + SIN_GATEWAY + """
                 | extend evento = tostring(j.evento)
                 | summarize
                     jugadoresActivos = dcountif(tostring(j.userId), evento == 'http.peticion' and isnotempty(tostring(j.userId))),
@@ -87,15 +90,23 @@ public class TableroAdminService {
 
     public TableroTecnicoDto tecnico(int minutos) {
         int m = acotar(minutos);
-        List<Map<String, Object>> peticiones = logs.consultar(PETICIONES.formatted(m) + """
+        List<Map<String, Object>> peticiones = logs.consultar(PETICIONES_TODAS.formatted(m) + """
                 | extend ms = todouble(j.duracion.ms), estado = toint(j.http.estado)
                 | summarize peticiones = count(), p50 = percentile(ms, 50), p95 = percentile(ms, 95),
                     errores5xx = countif(estado >= 500) by servicio = ContainerAppName_s, replica = ContainerGroupName_s
                 """);
+        // Solo las replicas de la version que corre cada servicio: las reemplazadas por un deploy no cuentan
         List<Map<String, Object>> senales = logs.consultar(LOGS.formatted(m) + """
                 | summarize ultimaSenal = max(TimeGenerated), excepciones = countif(tostring(j.log.level) == 'ERROR')
-                    by servicio = ContainerAppName_s, replica = ContainerGroupName_s
-                """);
+                    by servicio = ContainerAppName_s, replica = ContainerGroupName_s, revision = RevisionName_s
+                | join kind=inner (
+                    ContainerAppConsoleLogs_CL
+                    | where TimeGenerated > ago(%dm)
+                    | summarize arg_max(TimeGenerated, RevisionName_s) by servicio = ContainerAppName_s
+                    | project servicio, revisionActual = RevisionName_s) on servicio
+                | where revision == revisionActual
+                | project servicio, replica, ultimaSenal, excepciones
+                """.formatted(m));
         Map<String, Object> concurrentes = primera(logs.consultar(PETICIONES.formatted(MIN_MINUTOS) + """
                 | summarize usuariosConcurrentes = dcount(tostring(j.userId))
                 """));
@@ -124,11 +135,17 @@ public class TableroAdminService {
                 """.formatted(d, c, c));
     }
 
-    /** Une las peticiones con la ultima senal de cada replica y marca las degradadas o sin senal. */
+    /**
+     * A cada replica actual (las de senales) le suma sus peticiones y la marca degradada o sin senal. Las peticiones
+     * de replicas que ya no estan (reemplazadas por un deploy) no se muestran.
+     */
     private List<Map<String, Object>> replicas(List<Map<String, Object>> peticiones, List<Map<String, Object>> senales) {
         Map<String, Map<String, Object>> porReplica = new LinkedHashMap<>();
         for (Map<String, Object> s : senales) porReplica.put(clave(s), new LinkedHashMap<>(s));
-        for (Map<String, Object> p : peticiones) porReplica.computeIfAbsent(clave(p), k -> new LinkedHashMap<>()).putAll(p);
+        for (Map<String, Object> p : peticiones) {
+            Map<String, Object> r = porReplica.get(clave(p));
+            if (r != null) r.putAll(p);
+        }
         Instant ahora = reloj.instant();
         List<Map<String, Object>> resultado = new ArrayList<>();
         for (Map<String, Object> r : porReplica.values()) {

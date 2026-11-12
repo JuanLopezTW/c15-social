@@ -37,6 +37,7 @@ class TableroAdminServiceTest {
         assertEquals(1, t.jugadoresEnElTiempo().size());
         assertTrue(consultas.get(0).contains("ago(60m)"));
         assertTrue(consultas.get(0).contains("partida.iniciada"));
+        assertTrue(consultas.get(0).contains("!= 'c15-gateway'"), "el gateway no cuenta doble");
         assertTrue(consultas.get(2).contains("bin(TimeGenerated, 5m)"), "unos 12 puntos en la serie");
     }
 
@@ -80,13 +81,20 @@ class TableroAdminServiceTest {
     }
 
     @Test
-    void unaReplicaSinUltimaSenalCuentaComoSinSenal() {
-        respuestas.add(List.of(Map.of("servicio", "c15-broker", "replica", "br-1", "peticiones", 10, "p95", 5.0, "errores5xx", 0)));
+    void lasReplicasReemplazadasPorUnDeployNoSeMuestran() {
+        respuestas.add(List.of(
+                Map.of("servicio", "c15-broker", "replica", "br-vieja", "peticiones", 10, "p95", 5.0, "errores5xx", 0),
+                Map.of("servicio", "c15-broker", "replica", "br-1", "peticiones", 4, "p95", 9.0, "errores5xx", 0)));
+        respuestas.add(List.of(Map.of("servicio", "c15-broker", "replica", "br-1", "ultimaSenal", "2026-11-13T09:59:58Z", "excepciones", 0)));
 
         TableroTecnicoDto t = tableros.tecnico(15);
 
-        assertEquals(true, t.replicas().get(0).get("sinSenal"));
+        assertEquals(1, t.replicas().size(), "solo la replica de la version actual");
+        assertEquals(4, t.replicas().get(0).get("peticiones"));
         assertEquals(0, t.usuariosConcurrentes());
+        assertTrue(consultas.get(1).contains("revisionActual"), "filtra por la version que corre");
+        assertFalse(consultas.get(0).contains("!= 'c15-gateway'"), "el gateway si aparece por replica");
+        assertTrue(consultas.get(2).contains("!= 'c15-gateway'"), "los usuarios salen de los servicios");
     }
 
     @Test
