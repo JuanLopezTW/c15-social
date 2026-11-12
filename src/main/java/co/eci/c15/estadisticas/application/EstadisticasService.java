@@ -66,7 +66,7 @@ public class EstadisticasService {
     }
 
     public List<JugadorRankingDto> ranking(int limite) {
-        List<EstadisticaJugador> mejores = repositorio.ranking(Math.max(1, Math.min(limite, MAX_RANKING)));
+        List<EstadisticaJugador> mejores = repositorio.ranking(Math.clamp(limite, 1, MAX_RANKING));
         List<JugadorRankingDto> ranking = new ArrayList<>();
         for (int i = 0; i < mejores.size(); i++) ranking.add(JugadorRankingDto.from(i + 1, mejores.get(i)));
         return Collections.unmodifiableList(ranking);

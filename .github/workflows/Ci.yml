@@ -155,3 +155,63 @@ jobs:
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
           cache-from: type=gha
+
+  # DESACTIVADO hasta que existan las Container Apps (terraform apply completo de c15-infra).
+  # Para activarlo: quitar el '# ' del inicio de cada linea de este bloque.
+#   # Despliega la imagen de este commit en su Container App (la infraestructura la crea c15-infra con Terraform).
+#   # Sin el secret AZURE_CREDENTIALS se omite, igual que Sonar sin SONAR_TOKEN.
+#   deploy:
+#     name: Desplegar en Azure
+#     needs: publish
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 15
+#     permissions:
+#       contents: read
+#     env:
+#       AZURE_GRUPO: Escape_Room_RG
+#       AZURE_APP: c15-social
+#       HAY_CREDENCIALES: ${{ secrets.AZURE_CREDENTIALS != '' }}
+#     steps:
+#       - name: Despliegue omitido
+#         if: env.HAY_CREDENCIALES != 'true'
+#         run: echo "::notice::Despliegue omitido (falta el secret AZURE_CREDENTIALS)."
+#
+#       - name: Login en Azure
+#         if: env.HAY_CREDENCIALES == 'true'
+#         uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+#         with:
+#           creds: ${{ secrets.AZURE_CREDENTIALS }}
+#
+#       - name: Desplegar la imagen de este commit
+#         if: env.HAY_CREDENCIALES == 'true'
+#         run: |
+#           az containerapp update --name "$AZURE_APP" --resource-group "$AZURE_GRUPO" \
+#             --image "ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}" --output none
+#
+#       # Que Azure acepte el cambio no basta: este paso solo pasa cuando la revision nueva quedo sana
+#       - name: Esperar a que la revision nueva este sana
+#         if: env.HAY_CREDENCIALES == 'true'
+#         run: |
+#           revision=$(az containerapp show -n "$AZURE_APP" -g "$AZURE_GRUPO" --query properties.latestRevisionName -o tsv)
+#           for i in $(seq 1 60); do
+#             estado=$(az containerapp revision show -n "$AZURE_APP" -g "$AZURE_GRUPO" --revision "$revision" \
+#               --query "join('/', [properties.runningState || 'Nada', properties.healthState || 'Nada'])" -o tsv)
+#             echo "Intento $i: $revision $estado"
+#             case "$estado" in
+#               Running*/Healthy)
+#                 echo "### $AZURE_APP corre \`$GITHUB_SHA\` ($revision)" >> "$GITHUB_STEP_SUMMARY"
+#                 exit 0 ;;
+#               Failed*|Degraded*)
+#                 echo "::error::La revision $revision fallo ($estado). Revisa los logs de la app en Azure."
+#                 exit 1 ;;
+#               *)
+#                 ;; # sigue esperando (Activating, Processing...)
+#             esac
+#             sleep 10
+#           done
+#           echo "::error::Tras 10 minutos la revision $revision no quedo sana."
+#           exit 1
+#
+#       - name: Logout de Azure
+#         if: always() && env.HAY_CREDENCIALES == 'true'
+#         run: az logout || true

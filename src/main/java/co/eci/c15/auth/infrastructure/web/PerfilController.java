@@ -19,6 +19,8 @@ import java.util.Map;
 @RequestMapping("/api/perfil")
 public class PerfilController {
 
+    private static final String ERROR = "error";
+
     private final PerfilUseCase perfil;
 
     public PerfilController(PerfilUseCase perfil) {
@@ -30,7 +32,7 @@ public class PerfilController {
         return perfil.consultar(yo.getName())
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "Esta cuenta aun no tiene nombre de jugador")));
+                        .body(Map.of(ERROR, "Esta cuenta aun no tiene nombre de jugador")));
     }
 
     @PostMapping
@@ -38,9 +40,9 @@ public class PerfilController {
         try {
             return ResponseEntity.ok(perfil.registrar(yo.getName(), body.get("username")));
         } catch (UsernameInvalidoException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(ERROR, e.getMessage()));
         } catch (UsernameEnUsoException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(ERROR, e.getMessage()));
         }
     }
 }

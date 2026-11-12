@@ -26,7 +26,7 @@ public class EstadisticasController {
         return estadisticas.ranking(limite);
     }
 
-    /** Un jugador sin partidas devuelve todo en cero. */
+    /** Un jugador sin partidas devuelve sus cifras en cero. */
     @GetMapping("/jugadores/{userId}")
     public EstadisticasJugadorDto deJugador(@PathVariable("userId") String userId) {
         return estadisticas.deJugador(userId);

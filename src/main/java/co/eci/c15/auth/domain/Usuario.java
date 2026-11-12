@@ -27,7 +27,7 @@ public final class Usuario {
         if (username == null || username.isBlank()) {
             throw new UsernameInvalidoException("El nombre de usuario no puede estar vacío");
         }
-        if (!username.matches("[a-zA-Z0-9_]{3,20}")) {
+        if (!username.matches("\\w{3,20}")) {
             throw new UsernameInvalidoException("El nombre de usuario debe tener entre 3 y 20 caracteres alfanuméricos");
         }
     }

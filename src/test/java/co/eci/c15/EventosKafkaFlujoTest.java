@@ -55,7 +55,7 @@ class EventosKafkaFlujoTest {
     private MockMvc mvc;
 
     @Test
-    void laPartidaIniciadaAbreSusChatsYLaTerminadaSumaAlRanking() throws Exception {
+    void laPartidaIniciadaAbreSusChatsYLaTerminadaSumaAlRanking() {
         kafka.send("c15.partida-iniciada", "k-m1",
                 "{\"matchId\":\"k-m1\",\"equipos\":{\"k-e1\":[\"k-ana\"],\"k-e2\":[\"k-beto\"]},\"duracion\":\"PT10M\",\"campoNuevo\":1}");
 

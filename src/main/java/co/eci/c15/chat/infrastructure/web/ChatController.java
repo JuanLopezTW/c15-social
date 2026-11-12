@@ -22,6 +22,8 @@ import java.util.function.Supplier;
 @RequestMapping("/api/chat")
 public class ChatController {
 
+    private static final String TEXTO = "texto";
+
     private final ChatService chat;
 
     public ChatController(ChatService chat) {
@@ -35,7 +37,7 @@ public class ChatController {
 
     @PostMapping("/global")
     public ResponseEntity<?> enviarGlobal(@RequestBody Map<String, String> body, Principal yo) {
-        return responder(HttpStatus.CREATED, () -> chat.enviarGlobal(yo.getName(), body.get("texto")));
+        return responder(HttpStatus.CREATED, () -> chat.enviarGlobal(yo.getName(), body.get(TEXTO)));
     }
 
     @GetMapping("/salas/{salaId}")
@@ -46,7 +48,7 @@ public class ChatController {
     @PostMapping("/salas/{salaId}")
     public ResponseEntity<?> enviarSala(@PathVariable("salaId") String salaId, @RequestBody Map<String, String> body,
                                            Principal yo) {
-        return responder(HttpStatus.CREATED, () -> chat.enviarSala(salaId, yo.getName(), body.get("texto")));
+        return responder(HttpStatus.CREATED, () -> chat.enviarSala(salaId, yo.getName(), body.get(TEXTO)));
     }
 
     @GetMapping("/partidas/{matchId}")
@@ -57,7 +59,7 @@ public class ChatController {
     @PostMapping("/partidas/{matchId}")
     public ResponseEntity<?> enviarPartida(@PathVariable("matchId") String matchId, @RequestBody Map<String, String> body,
                                            Principal yo) {
-        return responder(HttpStatus.CREATED, () -> chat.enviarPartida(matchId, yo.getName(), body.get("texto")));
+        return responder(HttpStatus.CREATED, () -> chat.enviarPartida(matchId, yo.getName(), body.get(TEXTO)));
     }
 
     @GetMapping("/partidas/{matchId}/equipo")
@@ -68,7 +70,7 @@ public class ChatController {
     @PostMapping("/partidas/{matchId}/equipo")
     public ResponseEntity<?> enviarEquipo(@PathVariable("matchId") String matchId, @RequestBody Map<String, String> body,
                                            Principal yo) {
-        return responder(HttpStatus.CREATED, () -> chat.enviarEquipo(matchId, yo.getName(), body.get("texto")));
+        return responder(HttpStatus.CREATED, () -> chat.enviarEquipo(matchId, yo.getName(), body.get(TEXTO)));
     }
 
     private static ResponseEntity<?> responder(HttpStatus ok, Supplier<Object> accion) {
