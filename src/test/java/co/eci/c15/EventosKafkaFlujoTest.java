@@ -11,6 +11,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.Duration;
@@ -32,10 +33,11 @@ class EventosKafkaFlujoTest {
 
     @SuppressWarnings("resource")
     private static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:4.1.0");
+    private static final int INTENTOS = 3;
 
     @DynamicPropertySource
     static void kafka(DynamicPropertyRegistry propiedades) {
-        if (!KAFKA.isRunning()) KAFKA.start();
+        arrancarKafka();
         propiedades.add("c15.eventos.kafka", () -> "true");
         propiedades.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
         // Los topics son nuevos: se leen desde el principio
@@ -78,5 +80,20 @@ class EventosKafkaFlujoTest {
         kafka.send("c15.sala-cerrada", "k-s2", "{\"salaId\":\"k-s2\"}");
 
         await().atMost(Duration.ofSeconds(20)).until(() -> historial.historial("salas/k-s2").isEmpty());
+    }
+
+    /**
+     * Arranca Kafka reintentando: Testcontainers copia un script dentro del contenedor y a veces lo ejecuta
+     * antes de que el sistema termine de soltarlo ("Text file busy", sale con 126). Pasa sobre todo en el CI.
+     */
+    private static synchronized void arrancarKafka() {
+        for (int intento = 1; !KAFKA.isRunning(); intento++) {
+            try {
+                KAFKA.start();
+            } catch (ContainerLaunchException e) {
+                KAFKA.stop();
+                if (intento == INTENTOS) throw e;
+            }
+        }
     }
 }
