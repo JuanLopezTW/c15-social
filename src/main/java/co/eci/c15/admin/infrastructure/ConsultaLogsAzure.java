@@ -4,6 +4,7 @@ import co.eci.c15.admin.application.ConsultaLogs;
 import co.eci.c15.admin.application.LogsNoDisponiblesException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Primary;
@@ -45,6 +46,7 @@ public class ConsultaLogsAzure implements ConsultaLogs {
     private String token;
     private Instant venceToken = Instant.EPOCH;
 
+    @Autowired // hay otro constructor (el de las pruebas): sin esto Spring busca uno vacio y no arranca
     public ConsultaLogsAzure(RestClient.Builder http,
                              @Value("${c15.admin.log-analytics.workspace}") String workspace,
                              @Value("${IDENTITY_ENDPOINT:}") String identidadUrl,
